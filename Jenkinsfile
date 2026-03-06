@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Clone') {
             steps {
-                git 'https://github.com/NouraneZouabi/deploy-app-spring-angular.git'
+                git@github.com:ammarzarouki8/deploy-app-spring-angular.git
             }
         }
 
