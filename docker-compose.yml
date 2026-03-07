@@ -1,36 +1,35 @@
-version: '3.8'
-
+version: "3.3"
 services:
-  mysql:
-    image: mysql:8
-    container_name: mysql-db
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: mydb
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
+  angular-app:
+    image: ammarzarouki8/myapp-frontend
     ports:
-      - "3306:3306"
-
-  springboot-app:
-    image: springboot-app
-    build: ./springboot
-    container_name: springboot-app
-    restart: always
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/mydb
-      SPRING_DATASOURCE_USERNAME: user
-      SPRING_DATASOURCE_PASSWORD: password
+      - "0.0.0.0:4200:80"      
+  spring-boot-app:
+    image: ammarzarouki8/myapp-backend
     ports:
-      - "8080:8080"
+      - "0.0.0.0:8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/demo
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - spring.jpa.database-platform=org.hibernate.dialect.MySQL8Dialect
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_MVC_CORS_MAPPING=/**
+      - SPRING_MVC_CORS_ALLOWED_METHODS=GET,POST,PUT,DELETE
+      - SPRING_MVC_CORS_ALLOWED_HEADERS=*
     depends_on:
       - mysql
-
-  angular-app:
-    image: angular-app
-    build: ./angular
-    container_name: angular-app
+  mysql:
+    image: mysql:5.7
     restart: always
+    environment:
+      MYSQL_DATABASE: 'demo'
+      MYSQL_ROOT_USERNAME: 'root'
+      MYSQL_ROOT_PASSWORD: 'root'
     ports:
-      - "4200:4200"
+      - '0.0.0.0:3306:3306'
+    volumes:
+      - demo:/var/lib/mysql
+volumes:
+  demo:
