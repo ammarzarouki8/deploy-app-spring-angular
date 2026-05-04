@@ -6,6 +6,11 @@ pipeline {
         nodejs 'node'
     }
 
+    environment {
+        DOCKER_IMAGE_FRONT = "ammarzarouki8/myapp-frontend"
+        DOCKER_IMAGE_BACK  = "ammarzarouki8/myapp-backend"
+    }
+
     stages {
 
         stage('Clean') {
@@ -20,7 +25,6 @@ pipeline {
             }
         }
 
-        // ✅ TEST DOCKER
         stage('Test Docker') {
             steps {
                 sh 'docker --version'
@@ -28,7 +32,6 @@ pipeline {
             }
         }
 
-        // ✅ LOGIN DOCKER HUB (une seule fois)
         stage('Docker Login') {
             steps {
                 withCredentials([usernamePassword(
@@ -41,33 +44,28 @@ pipeline {
             }
         }
 
-        // ✅ FRONTEND
-        stage('Build Frontend Image') {
+        stage('Build Frontend') {
             steps {
-                dir('deploy-app-spring-angular/angular-app') {
-                    sh 'docker build -t ammarzarouki8/myapp-frontend .'
-                    sh 'docker push ammarzarouki8/myapp-frontend'
+                dir('angular-app') {
+                    sh 'docker build -t $DOCKER_IMAGE_FRONT .'
+                    sh 'docker push $DOCKER_IMAGE_FRONT'
                 }
             }
         }
 
-        // ✅ BACKEND
-        stage('Build Backend Image') {
+        stage('Build Backend') {
             steps {
-                dir('deploy-app-spring-angular/springboot') {
+                dir('springboot') {
                     sh 'mvn clean package'
-                    sh 'docker build -t ammarzarouki8/myapp-backend .'
-                    sh 'docker push ammarzarouki8/myapp-backend'
+                    sh 'docker build -t $DOCKER_IMAGE_BACK .'
+                    sh 'docker push $DOCKER_IMAGE_BACK'
                 }
             }
         }
 
-        // ✅ DEPLOY
         stage('Deploy') {
             steps {
-                dir('deploy-app-spring-angular') {
-                    sh 'docker compose up -d'
-                }
+                sh 'docker compose up -d'
             }
         }
     }
