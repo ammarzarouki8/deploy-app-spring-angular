@@ -20,47 +20,53 @@ pipeline {
             }
         }
 
+        // ✅ TEST DOCKER
+        stage('Test Docker') {
+            steps {
+                sh 'docker --version'
+                sh 'docker ps'
+            }
+        }
+
+        // ✅ LOGIN DOCKER HUB (une seule fois)
+        stage('Docker Login') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-hub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                }
+            }
+        }
+
+        // ✅ FRONTEND
         stage('Build Frontend Image') {
             steps {
                 dir('deploy-app-spring-angular/angular-app') {
-
-                    withCredentials([usernamePassword(
-                        credentialsId: 'docker-hub-creds',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )]) {
-
-                        bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
-                        bat 'docker build -t ammarzarouki8/myapp-frontend .'
-                        bat 'docker push ammarzarouki8/myapp-frontend'
-                    }
+                    sh 'docker build -t ammarzarouki8/myapp-frontend .'
+                    sh 'docker push ammarzarouki8/myapp-frontend'
                 }
             }
         }
 
+        // ✅ BACKEND
         stage('Build Backend Image') {
             steps {
                 dir('deploy-app-spring-angular/springboot') {
-
-                    withCredentials([usernamePassword(
-                        credentialsId: 'docker-hub-creds',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )]) {
-
-                        bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
-                        bat 'mvn clean package'
-                        bat 'docker build -t ammarzarouki8/myapp-backend .'
-                        bat 'docker push ammarzarouki8/myapp-backend'
-                    }
+                    sh 'mvn clean package'
+                    sh 'docker build -t ammarzarouki8/myapp-backend .'
+                    sh 'docker push ammarzarouki8/myapp-backend'
                 }
             }
         }
 
+        // ✅ DEPLOY
         stage('Deploy') {
             steps {
                 dir('deploy-app-spring-angular') {
-                    bat 'docker compose up -d'
+                    sh 'docker compose up -d'
                 }
             }
         }
