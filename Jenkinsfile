@@ -1,66 +1,119 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKER_HUB = "ammarzarouki8"
+        FRONT_IMAGE = "myapp-frontend"
+        BACK_IMAGE  = "myapp-backend"
+        REPO_URL = "https://github.com/ammarzarouki8/deploy-app-spring-angular.git"
+    }
+
     stages {
 
-        stage('Clean') {
+        stage('Clean Workspace') {
             steps {
                 deleteDir()
             }
         }
 
-        stage('Test Docker') {
+        stage('Clone Repository') {
             steps {
-                sh 'docker --version'
+                git branch: 'main', url: "${REPO_URL}"
             }
         }
 
-        stage('Build Frontend Image') {
+        stage('Verify Tools') {
+            steps {
+                sh '''
+                    echo "Checking tools versions..."
+                    docker --version
+                    java -version || true
+                    mvn -version || true
+                    node -v || true
+                    npm -v || true
+                '''
+            }
+        }
+
+        stage('Docker Login') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-hub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    '''
+                }
+            }
+        }
+
+        stage('Build Frontend') {
             steps {
                 dir('angular-app') {
+                    sh '''
+                        echo "Installing Angular dependencies..."
+                        npm install
 
-                    withCredentials([usernamePassword(
-                        credentialsId: 'docker-hub-creds',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )]) {
+                        echo "Building Angular app..."
+                        npm run build
+                    '''
 
-                        sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-
-                        sh 'docker build -t ammarzarouki8/myapp-frontend .'
-
-                        sh 'docker push ammarzarouki8/myapp-frontend'
-                    }
+                    sh '''
+                        docker build -t $DOCKER_HUB/$FRONT_IMAGE \
+                        -f Dockerfile .
+                    '''
                 }
             }
         }
 
-        stage('Build Backend Image') {
+        stage('Build Backend') {
             steps {
                 dir('springboot') {
+                    sh '''
+                        echo "Building Spring Boot app..."
+                        mvn clean package -DskipTests
+                    '''
 
-                    withCredentials([usernamePassword(
-                        credentialsId: 'docker-hub-creds',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )]) {
-
-                        sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-
-                        sh 'mvn clean package'
-
-                        sh 'docker build -t ammarzarouki8/myapp-backend .'
-
-                        sh 'docker push ammarzarouki8/myapp-backend'
-                    }
+                    sh '''
+                        docker build -t $DOCKER_HUB/$BACK_IMAGE \
+                        -f Dockerfile .
+                    '''
                 }
             }
         }
 
-        stage('Deploy') {
+        stage('Push Images') {
             steps {
-                sh 'docker compose up -d'
+                sh '''
+                    docker push $DOCKER_HUB/$FRONT_IMAGE
+                    docker push $DOCKER_HUB/$BACK_IMAGE
+                '''
             }
+        }
+
+        stage('Deploy with Docker Compose') {
+            steps {
+                sh '''
+                    docker compose down || true
+                    docker compose up -d --build
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Pipeline executed successfully"
+        }
+
+        failure {
+            echo "❌ Pipeline failed - check logs"
+        }
+
+        always {
+            cleanWs()
         }
     }
 }
