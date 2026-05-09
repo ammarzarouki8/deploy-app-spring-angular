@@ -9,12 +9,6 @@ pipeline {
             }
         }
 
-        stage('Clone repo') {
-            steps {
-                git 'https://github.com/ammarzarouki8/deploy-app-spring-angular.git'
-            }
-        }
-
         stage('Test Docker') {
             steps {
                 sh 'docker --version'
@@ -23,7 +17,7 @@ pipeline {
 
         stage('Build Frontend Image') {
             steps {
-                dir('deploy-app-spring-angular/angular-app') {
+                dir('angular-app') {
 
                     withCredentials([usernamePassword(
                         credentialsId: 'docker-hub-creds',
@@ -43,7 +37,7 @@ pipeline {
 
         stage('Build Backend Image') {
             steps {
-                dir('deploy-app-spring-angular/springboot') {
+                dir('springboot') {
 
                     withCredentials([usernamePassword(
                         credentialsId: 'docker-hub-creds',
@@ -65,10 +59,7 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                dir('deploy-app-spring-angular') {
-
-                    sh 'docker compose up -d'
-                }
+                sh 'docker compose up -d'
             }
         }
     }
