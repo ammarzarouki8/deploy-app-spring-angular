@@ -1,0 +1,12 @@
+---
+- name: Pull de l'image backend depuis Docker Hub
+  community.docker.docker_image:
+    name: "ammarzarouki8/myapp-backend"
+    tag: "latest"
+    source: pull
+
+- name: Déployer le backend sur Kubernetes
+  command: kubectl apply -f /tmp/backend-deployment.yaml
+
+- name: Vérifier le déploiement backend
+  command: kubectl rollout status deployment/myapp-backend

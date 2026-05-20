@@ -1,0 +1,40 @@
+---
+- name: Configuration initiale du serveur
+  hosts: k8s_master
+  become: yes
+
+  tasks:
+
+    - name: Mettre à jour les paquets
+      apt:
+        update_cache: yes
+        upgrade: yes
+
+    - name: Installer Docker
+      apt:
+        name:
+          - docker.io
+          - docker-compose
+        state: present
+
+    - name: Démarrer et activer Docker
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: Installer kubectl
+      shell: |
+        curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x kubectl
+        mv kubectl /usr/local/bin/kubectl
+      args:
+        creates: /usr/local/bin/kubectl
+
+    - name: Vérifier kubectl
+      command: kubectl version --client
+      register: kubectl_version
+
+    - name: Afficher la version kubectl
+      debug:
+        msg: "{{ kubectl_version.stdout }}"

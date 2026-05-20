@@ -1,0 +1,47 @@
+---
+- name: Déployer le Frontend Angular
+  hosts: k8s_master
+  become: yes
+  vars:
+    image_name: "ammarzarouki8/myapp-frontend"
+    image_tag: "latest"
+    namespace: "default"
+
+  tasks:
+
+    - name: Vérifier la connexion au cluster
+      command: kubectl cluster-info
+      register: cluster_info
+
+    - name: Afficher l'état du cluster
+      debug:
+        msg: "{{ cluster_info.stdout }}"
+
+    - name: Copier le manifest frontend deployment
+      copy:
+        src: ../../k8s/frontend-deployment.yaml
+        dest: /tmp/frontend-deployment.yaml
+
+    - name: Copier le manifest frontend service
+      copy:
+        src: ../../k8s/frontend-service.yaml
+        dest: /tmp/frontend-service.yaml
+
+    - name: Appliquer le deployment frontend
+      command: kubectl apply -f /tmp/frontend-deployment.yaml -n {{ namespace }}
+
+    - name: Appliquer le service frontend
+      command: kubectl apply -f /tmp/frontend-service.yaml -n {{ namespace }}
+
+    - name: Attendre que le déploiement soit prêt
+      command: kubectl rollout status deployment/myapp-frontend -n {{ namespace }}
+      retries: 5
+      delay: 10
+
+    - name: Vérifier les pods frontend
+      command: kubectl get pods -l app=myapp-frontend -n {{ namespace }}
+      register: pods_status
+
+    - name: Afficher les pods
+      debug:
+        msg: "{{ pods_status.stdout }}"

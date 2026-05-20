@@ -20,20 +20,13 @@ spec:
         env:
         - name: SPRING_DATASOURCE_URL
           value: jdbc:mysql://mysql-service:3306/demo
-        - name: SPRING_DATASOURCE_USERNAME 
+        - name: SPRING_DATASOURCE_USERNAME
           value: root
         - name: SPRING_DATASOURCE_PASSWORD
           value: root
-        - name: SPRING_DATASOURCE_PASSWORD
-          value: com.mysql.cj.jdbc.Driver
-        - name: SPRING_JPA_HIBERNATE_DDL_AUTO 
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
           value: update
         - name: SPRING_MVC_CORS_MAPPING
-          value: /**
+          value: "/*"
         - name: SPRING_MVC_CORS_ALLOWED_METHODS
-          value: GET,POST,PUT,DELETE
-        - name: SPRING_MVC_CORS_ALLOWED_HEADERS
-          value: "*"
-        - name: SPRING_MVC_CORS_ALLOWED_ORIGINS
-          value: http://angular-app-service:80
-
+          value: "GET,POST,PUT,DELETE"

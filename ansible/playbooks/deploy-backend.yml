@@ -1,0 +1,47 @@
+---
+- name: Déployer le Backend Spring Boot
+  hosts: k8s_master
+  become: yes
+  vars:
+    image_name: "ammarzarouki8/myapp-backend"
+    image_tag: "latest"
+    namespace: "default"
+
+  tasks:
+
+    - name: Vérifier la connexion au cluster
+      command: kubectl cluster-info
+      register: cluster_info
+
+    - name: Afficher l'état du cluster
+      debug:
+        msg: "{{ cluster_info.stdout }}"
+
+    - name: Copier le manifest backend deployment
+      copy:
+        src: ../../k8s/backend-deployment.yaml
+        dest: /tmp/backend-deployment.yaml
+
+    - name: Copier le manifest backend service
+      copy:
+        src: ../../k8s/backend-service.yaml
+        dest: /tmp/backend-service.yaml
+
+    - name: Appliquer le deployment backend
+      command: kubectl apply -f /tmp/backend-deployment.yaml -n {{ namespace }}
+
+    - name: Appliquer le service backend
+      command: kubectl apply -f /tmp/backend-service.yaml -n {{ namespace }}
+
+    - name: Attendre que le déploiement soit prêt
+      command: kubectl rollout status deployment/myapp-backend -n {{ namespace }}
+      retries: 5
+      delay: 10
+
+    - name: Vérifier les pods backend
+      command: kubectl get pods -l app=myapp-backend -n {{ namespace }}
+      register: pods_status
+
+    - name: Afficher les pods
+      debug:
+        msg: "{{ pods_status.stdout }}"

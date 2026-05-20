@@ -1,27 +1,22 @@
 pipeline {
     agent any
-
     environment {
         DOCKER_HUB = "ammarzarouki8"
         FRONT_IMAGE = "myapp-frontend"
         BACK_IMAGE  = "myapp-backend"
         REPO_URL = "https://github.com/ammarzarouki8/deploy-app-spring-angular.git"
     }
-
     stages {
-
         stage('Clean Workspace') {
             steps {
                 deleteDir()
             }
         }
-
         stage('Clone Repository') {
             steps {
                 git branch: 'main', url: "${REPO_URL}"
             }
         }
-
         stage('Verify Tools') {
             steps {
                 sh '''
@@ -31,10 +26,10 @@ pipeline {
                     mvn -version || true
                     node -v || true
                     npm -v || true
+                    ansible --version
                 '''
             }
         }
-
         stage('Docker Login') {
             steps {
                 withCredentials([usernamePassword(
@@ -48,18 +43,15 @@ pipeline {
                 }
             }
         }
-
         stage('Build Frontend') {
             steps {
                 dir('angular-app') {
                     sh '''
                         echo "Installing Angular dependencies..."
                         npm install
-
                         echo "Building Angular app..."
                         npm run build
                     '''
-
                     sh '''
                         docker build -t $DOCKER_HUB/$FRONT_IMAGE \
                         -f Dockerfile .
@@ -67,7 +59,6 @@ pipeline {
                 }
             }
         }
-
         stage('Build Backend') {
             steps {
                 dir('springboot') {
@@ -75,7 +66,6 @@ pipeline {
                         echo "Building Spring Boot app..."
                         mvn clean package -DskipTests
                     '''
-
                     sh '''
                         docker build -t $DOCKER_HUB/$BACK_IMAGE \
                         -f Dockerfile .
@@ -83,7 +73,6 @@ pipeline {
                 }
             }
         }
-
         stage('Push Images') {
             steps {
                 sh '''
@@ -92,26 +81,31 @@ pipeline {
                 '''
             }
         }
-
-        stage('Deploy with Docker Compose') {
+        stage('Deploy with Ansible') {
             steps {
                 sh '''
-                    docker compose down || true
-                    docker compose up -d --build
+                    cd ansible
+                    ansible-playbook -i inventory/hosts.ini playbooks/deploy-backend.yml -v
+                    ansible-playbook -i inventory/hosts.ini playbooks/deploy-frontend.yml -v
+                '''
+            }
+        }
+        stage('Verify Deployment') {
+            steps {
+                sh '''
+                    kubectl get pods
+                    kubectl get services
                 '''
             }
         }
     }
-
     post {
         success {
             echo "✅ Pipeline executed successfully"
         }
-
         failure {
             echo "❌ Pipeline failed - check logs"
         }
-
         always {
             cleanWs()
         }

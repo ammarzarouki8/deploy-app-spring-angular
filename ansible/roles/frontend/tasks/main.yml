@@ -1,0 +1,12 @@
+---
+- name: Pull de l'image frontend depuis Docker Hub
+  community.docker.docker_image:
+    name: "ammarzarouki8/myapp-frontend"
+    tag: "latest"
+    source: pull
+
+- name: Déployer le frontend sur Kubernetes
+  command: kubectl apply -f /tmp/frontend-deployment.yaml
+
+- name: Vérifier le déploiement frontend
+  command: kubectl rollout status deployment/myapp-frontend
