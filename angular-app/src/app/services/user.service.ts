@@ -1,4 +1,3 @@
-cat > angular-app/src/app/services/user.service.ts << 'EOF'
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
@@ -32,4 +31,3 @@ export class UserService {
     return this.httpClient.post(url,body,{headers})
   }
 }
-EOF

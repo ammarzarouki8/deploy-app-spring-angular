@@ -1,16 +1,17 @@
 ---
 - name: Déployer le Frontend Angular
   hosts: k8s_master
-  become: yes
+  become: no
   vars:
-    image_name: "ammarzarouki8/myapp-frontend"
-    image_tag: "latest"
-    namespace: "default"
+    kube_namespace: "default"
+    kubeconfig: "/home/ammar/.kube/config"
 
   tasks:
 
     - name: Vérifier la connexion au cluster
       command: kubectl cluster-info
+      environment:
+        KUBECONFIG: "{{ kubeconfig }}"
       register: cluster_info
 
     - name: Afficher l'état du cluster
@@ -19,27 +20,37 @@
 
     - name: Copier le manifest frontend deployment
       copy:
-        src: ../../k8s/frontend-deployment.yaml
+        src: /home/ammar/deploy-app-spring-angular/k8s/deploy-angular.yaml
         dest: /tmp/frontend-deployment.yaml
+        remote_src: yes
 
     - name: Copier le manifest frontend service
       copy:
-        src: ../../k8s/frontend-service.yaml
+        src: /home/ammar/deploy-app-spring-angular/k8s/angular-svc.yaml
         dest: /tmp/frontend-service.yaml
+        remote_src: yes
 
     - name: Appliquer le deployment frontend
-      command: kubectl apply -f /tmp/frontend-deployment.yaml -n {{ namespace }}
+      command: kubectl apply -f /tmp/frontend-deployment.yaml -n {{ kube_namespace }}
+      environment:
+        KUBECONFIG: "{{ kubeconfig }}"
 
     - name: Appliquer le service frontend
-      command: kubectl apply -f /tmp/frontend-service.yaml -n {{ namespace }}
+      command: kubectl apply -f /tmp/frontend-service.yaml -n {{ kube_namespace }}
+      environment:
+        KUBECONFIG: "{{ kubeconfig }}"
 
     - name: Attendre que le déploiement soit prêt
-      command: kubectl rollout status deployment/myapp-frontend -n {{ namespace }}
+      command: kubectl rollout status deployment/angular-deployment -n {{ kube_namespace }}
+      environment:
+        KUBECONFIG: "{{ kubeconfig }}"
       retries: 5
       delay: 10
 
     - name: Vérifier les pods frontend
-      command: kubectl get pods -l app=myapp-frontend -n {{ namespace }}
+      command: kubectl get pods -l app=angular-app -n {{ kube_namespace }}
+      environment:
+        KUBECONFIG: "{{ kubeconfig }}"
       register: pods_status
 
     - name: Afficher les pods
