@@ -1,4 +1,4 @@
-name: Sync to secondary GitHub account
+name: Sync to secondary repo
 
 on:
   push:
@@ -26,4 +26,4 @@ jobs:
         run: |
           git remote remove backup || true
           git remote add backup https://x-access-token:${TOKEN}@github.com/zarroukiammar-coder/deploy-app-spring-angular.git
-          git push backup main --force
+          git push backup HEAD:main --force
