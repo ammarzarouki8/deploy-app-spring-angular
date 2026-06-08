@@ -1,0 +1,28 @@
+name: Sync to secondary GitHub account
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Push to secondary repo
+        env:
+          TOKEN: ${{ secrets.COMPTE2_TOKEN }}
+        run: |
+          git remote add backup https://x-access-token:${TOKEN}@github.com/zarroukiammar-coder/deploy-app-spring-angular.git
+          git push backup main --force
