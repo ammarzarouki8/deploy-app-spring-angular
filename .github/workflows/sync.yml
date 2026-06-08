@@ -24,5 +24,6 @@ jobs:
         env:
           TOKEN: ${{ secrets.COMPTE2_TOKEN }}
         run: |
+          git remote remove backup || true
           git remote add backup https://x-access-token:${TOKEN}@github.com/zarroukiammar-coder/deploy-app-spring-angular.git
           git push backup main --force
